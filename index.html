@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Imágenes con Checkboxes</title>
+    <title>Lista de Pokémon con Checkboxes</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -55,43 +55,90 @@
     </div>
 
     <script>
-    const totalImages = 176; // Cambia al número total de imágenes subidas
-    const container = document.getElementById('imageContainer');
-    const filterCheckbox = document.getElementById('filter-unchecked');
+        const totalImages = 176; // Número total de imágenes
+        const container = document.getElementById('imageContainer');
+        const filterCheckbox = document.getElementById('filter-unchecked');
 
-    // Crear dinámicamente las imágenes y sus checkboxes
-    for (let i = 1; i <= totalImages; i++) {
-        const card = document.createElement('div');
-        card.className = 'image-card';
+        // Función para generar la ruta de la imagen
+        function getImagePaths(index) {
+            const basePath = `pokemon/`;
+            const formattedIndex = String(index).padStart(3, '0'); // Formato 001, 002, etc.
+            return [
+                `${basePath}${formattedIndex}.png`,     // Imagen normal
+                `${basePath}${formattedIndex}-1.png`,   // Imagen alternativa
+                `${basePath}${formattedIndex}-2.png`    // Imagen alternativa (si existe)
+            ];
+        }
 
-        const img = document.createElement('img');
-        img.src = `pokemon/imagen${i}.png`; // Cambia el formato si tus imágenes no son JPG
-        img.alt = `Imagen ${i}`;
+        // Cargar el estado de los checkboxes desde localStorage
+        function loadCheckboxState() {
+            const savedState = JSON.parse(localStorage.getItem('checkboxState')) || {};
+            return savedState;
+        }
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'image-checkbox';
+        // Guardar el estado de los checkboxes en localStorage
+        function saveCheckboxState(index, isChecked) {
+            const savedState = loadCheckboxState();
+            savedState[index] = isChecked;
+            localStorage.setItem('checkboxState', JSON.stringify(savedState));
+        }
 
-        card.appendChild(img);
-        card.appendChild(checkbox);
-        container.appendChild(card);
-    }
+        // Crear dinámicamente las imágenes y sus checkboxes
+        for (let i = 1; i <= totalImages; i++) {
+            const card = document.createElement('div');
+            card.className = 'image-card';
 
-    // Filtrar imágenes según el estado del checkbox principal
-    filterCheckbox.addEventListener('change', () => {
-        const checkboxes = document.querySelectorAll('.image-checkbox');
-        checkboxes.forEach((checkbox) => {
-            const card = checkbox.parentElement;
-            if (filterCheckbox.checked) {
-                // Mostrar solo imágenes no marcadas
-                card.style.display = checkbox.checked ? 'none' : 'flex';
-            } else {
-                // Mostrar todas las imágenes
-                card.style.display = 'flex';
-            }
+            const img = document.createElement('img');
+            img.alt = `Pokémon ${i}`;
+
+            // Obtener las rutas de las imágenes
+            const imagePaths = getImagePaths(i);
+            img.src = imagePaths[0]; // Cargar la primera imagen por defecto
+
+            // Intentar cargar la primera imagen
+            img.onerror = function() {
+                img.src = imagePaths[1]; // Si falla, cargar la segunda imagen
+                img.onerror = function() {
+                    img.src = imagePaths[2]; // Si también falla, cargar la tercera imagen
+                };
+            };
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'image-checkbox';
+
+            // Cargar el estado del checkbox
+            const savedState = loadCheckboxState();
+            checkbox.checked = !!savedState[i];
+
+            // Guardar el estado cuando cambie
+            checkbox.addEventListener('change', () => {
+                saveCheckboxState(i, checkbox.checked);
+            });
+
+            const label = document.createElement('label');
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(` Seleccionar`));
+
+            card.appendChild(img);
+            card.appendChild(label);
+            container.appendChild(card);
+        }
+
+        // Filtrar imágenes según el estado del checkbox principal
+        filterCheckbox.addEventListener('change', () => {
+            const checkboxes = document.querySelectorAll('.image-checkbox');
+            checkboxes.forEach((checkbox, index) => {
+                const card = checkbox.parentElement.parentElement; // Obtener el contenedor de la imagen
+                if (filterCheckbox.checked) {
+                    // Mostrar solo imágenes no marcadas
+                    card.style.display = checkbox.checked ? 'none' : 'flex';
+                } else {
+                    // Mostrar todas las imágenes
+                    card.style.display = 'flex';
+                }
+            });
         });
-    });
-</script>
-
+    </script>
 </body>
 </html>
