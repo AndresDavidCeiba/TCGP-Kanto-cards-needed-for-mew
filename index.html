@@ -178,6 +178,18 @@
             localStorage.setItem('checkboxState', JSON.stringify(savedState));
         }
 
+        function loadVariantState() {
+            const savedVariants = JSON.parse(localStorage.getItem('variantState')) || {};
+            return savedVariants;
+        }
+        
+        function saveVariantState(index, selectedIndex) {
+            const savedVariants = loadVariantState();
+            savedVariants[index] = selectedIndex;
+            localStorage.setItem('variantState', JSON.stringify(savedVariants));
+        }
+        
+
 
 
         for (let i = 1; i <= totalImages; i++) {
@@ -194,7 +206,11 @@
             img.alt = `Pokémon ${i}`;
         
             const imagePaths = getImagePaths(i);
-            img.src = imagePaths[0]; // Cargar la imagen base
+        
+            // Cargar la variante guardada
+            const savedVariants = loadVariantState();
+            const savedIndex = savedVariants[i] || 0; // Carga la variante guardada o 0 por defecto
+            img.src = imagePaths[savedIndex]; // Establece la imagen en la variante guardada
         
             // Cambiar la imagen si hay error en la carga
             img.onerror = function() {
@@ -230,9 +246,12 @@
                     select.appendChild(option);
                 });
         
+                select.value = savedIndex; // Selecciona la opción correspondiente en el menú desplegable
+        
                 select.addEventListener('change', () => {
                     const selectedIndex = select.value;
                     img.src = imagePaths[selectedIndex];
+                    saveVariantState(i, selectedIndex); // Guardar la variante seleccionada
                 });
         
                 card.appendChild(select); // Añadir el menú desplegable después de la imagen
@@ -260,9 +279,8 @@
                 document.getElementById('congratulationsMessage').addEventListener('click', () => {
                     document.getElementById('congratulationsMessage').style.display = 'none';
                 });
-                
             });
-                
+        
             // Agregar un evento de clic al documento para ocultar el popup
             document.addEventListener('click', (event) => {
                 const popup = document.getElementById('congratulationsMessage');
@@ -272,19 +290,13 @@
                     popup.style.display = 'none'; // Ocultar el popup
                 }
             });
-            
+        
             // Ocultar el popup al hacer clic en la imagen desplegada
             const popupImage = document.getElementById('popupImage');
             popupImage.addEventListener('click', () => {
                 document.getElementById('congratulationsMessage').style.display = 'none';
             });
-            
-
-
-
-
-
-
+        
             const label = document.createElement('label');
             label.appendChild(checkbox);
             label.appendChild(document.createTextNode(` Seleccionar`));
@@ -292,6 +304,7 @@
             card.appendChild(label); // Añadir el checkbox a la tarjeta
             container.appendChild(card); // Añadir la tarjeta al contenedor
         }
+        
         
 
         filterCheckbox.addEventListener('change', () => {
