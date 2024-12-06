@@ -1,140 +1,309 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Pokémon con Checkboxes</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        .container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            padding: 16px;
-        }
-        .image-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 150px;
-        }
-        .image-card img {
-            width: 100%;
-            height: auto;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Lista de Pokémon con Checkboxes</title>
+        <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet"> <!-- Agregar Google Fonts -->
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                overflow-x: hidden; /* Evitar desplazamiento horizontal */
+            }
+            /* ... otros estilos ... */
+            
+            #congratulationsMessage h2 {
+                font-family: 'Dancing Script', cursive; /* Fuente festiva */
+                font-size: 2.5rem; /* Tamaño de fuente grande */
+                color: #ff4081; /* Color brillante */
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* Sombra de texto */
+                margin-bottom: 1rem; /* Espacio debajo del texto */
+            }
         .filter-bar {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             background: #f4f4f4;
-            padding: 10px 16px;
+            padding: 0.5rem 1rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0.125rem 0.3125rem rgba(0, 0, 0, 0.1);
+        }
+        .title-image {
+            display: block;
+            margin: 3.75rem auto 1rem;
+            max-width: 100%;
+            height: auto;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1rem;
+            justify-content: center;
+        }
+        .image-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: calc(50% - 1rem);
+            max-width: 400px; /* Limitar el ancho máximo */
+            margin-bottom: 1rem; /* Espacio en la parte inferior para separar las tarjetas */
+        }
+        .image-card img {
+            width: 100%;
+            height: auto;
+            border: 0.0625rem solid #ddd;
+            border-radius: 0.25rem;
+            box-shadow: 0 0.125rem 0.3125rem rgba(0, 0, 0, 0.2);
+        }
+        .image-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-size: 1rem; /* Usar unidades relativas */
+        }
+        .image-card select {
+            margin-top: 0.5rem; /* Espacio entre la imagen y el menú desplegable */
+        }
+        .popup {
+            position: fixed;
+            display: none; /* Oculto por defecto */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 1px solid #ddd;
+            box-shadow: 0 0.125rem 0.3125rem rgba(0, 0, 0, 0.2);
+            z-index: 1000; /* Asegurarse de que esté en la parte superior */
+            width: 80%; /* Ajustar el ancho de la mini ventana */
+            max-width: 1000px; /* Ancho máximo de la mini ventana */
+            height: auto; /* Ajustar la altura automáticamente */
+        }
+        .popup img {
+            max-width: 100%; /* La imagen ocupa el 100% del ancho de la mini ventana */
+            height: auto; /* Mantener la proporción de la imagen */
         }
     </style>
+    
 </head>
 <body>
+    
+    <!-- Mensaje de felicitación -->
+   <!-- Contenedor para la mini ventana flotante -->
+   <div class="popup" id="congratulationsMessage" style="display: none; text-align: center;">
+    <h2>¡Lo conseguiste!</h2>
+    <img src="title/mew.png" alt="Felicitaciones" style="max-width: 100%; height: auto;">
+</div>
+
+    
     <div class="filter-bar">
         <label>
             <input type="checkbox" id="filter-unchecked"> Mostrar solo imágenes no marcadas
         </label>
     </div>
+
+    <img src="title/TCGP-Kanto-cards.png" alt="Título de la Lista" class="title-image">
+
     <div class="container" id="imageContainer">
         <!-- Las imágenes serán añadidas aquí dinámicamente -->
     </div>
 
+    <!-- Contenedor para la mini ventana flotante -->
+    <div class="popup" id="imagePopup">
+    <img id="popupImage" alt="Imagen Ampliada">
+    </div>
+
+    
     <script>
-        const totalImages = 176; // Número total de imágenes
+        const totalImages = 150; // Número base de imágenes
         const container = document.getElementById('imageContainer');
         const filterCheckbox = document.getElementById('filter-unchecked');
 
-        // Función para generar la ruta de la imagen
+        // Función para obtener las rutas de las imágenes
         function getImagePaths(index) {
             const basePath = `pokemon/`;
-            const formattedIndex = String(index).padStart(3, '0'); // Formato 001, 002, etc.
-            return [
-                `${basePath}${formattedIndex}.png`,     // Imagen normal
-                `${basePath}${formattedIndex}-1.png`,   // Imagen alternativa
-                `${basePath}${formattedIndex}-2.png`    // Imagen alternativa (si existe)
-            ];
+            const formattedIndex = String(index).padStart(3, '0');
+            const paths = [`${basePath}${formattedIndex}.png`]; // Ruta de la imagen base
+
+            // Agregar variantes si existen
+            const variants = {
+                1: ['001-1.png'],
+                4: ['004-1.png'],
+                7: ['007-1.png'],
+                18: ['018-1.png'],
+                31: ['031-1.png'],
+                34: ['034-1.png'],
+                42: ['042-1.png'],
+                44: ['044-1.png'],
+                50: ['050-1.png'],
+                52: ['052-1.png'],
+                65: ['065-1.png'],
+                78: ['078-1.png'],
+                79: ['079-1.png'],
+                101: ['101-1.png'],
+                104: ['104-1.png'],
+                110: ['110-1.png'],
+                127: ['127-1.png'],
+                130: ['130-1.png'],
+                131: ['131-1.png'],
+                132: ['132-1.png'],
+                133: ['133-1.png', '133-2.png', '133-3.png'],
+                137: ['137-1.png'],
+                143: ['143-1.png'],
+                149: ['149-1.png']
+            };
+
+            if (variants[index]) {
+                variants[index].forEach(variant => {
+                    paths.push(`${basePath}${variant}`);
+                });
+            }
+
+            return paths;
         }
 
-        // Cargar el estado de los checkboxes desde localStorage
         function loadCheckboxState() {
             const savedState = JSON.parse(localStorage.getItem('checkboxState')) || {};
             return savedState;
         }
 
-        // Guardar el estado de los checkboxes en localStorage
         function saveCheckboxState(index, isChecked) {
             const savedState = loadCheckboxState();
             savedState[index] = isChecked;
             localStorage.setItem('checkboxState', JSON.stringify(savedState));
         }
 
-        // Crear dinámicamente las imágenes y sus checkboxes
+
+
         for (let i = 1; i <= totalImages; i++) {
             const card = document.createElement('div');
             card.className = 'image-card';
-
+        
+            // Título de la imagen (solo el número)
+            const title = document.createElement('div');
+            title.className = 'image-title';
+            title.textContent = String(i).padStart(3, '0'); // Solo el número
+            card.appendChild(title);
+        
             const img = document.createElement('img');
             img.alt = `Pokémon ${i}`;
-
-            // Obtener las rutas de las imágenes
+        
             const imagePaths = getImagePaths(i);
-            img.src = imagePaths[0]; // Cargar la primera imagen por defecto
-
-            // Intentar cargar la primera imagen
+            img.src = imagePaths[0]; // Cargar la imagen base
+        
+            // Cambiar la imagen si hay error en la carga
             img.onerror = function() {
-                img.src = imagePaths[1]; // Si falla, cargar la segunda imagen
-                img.onerror = function() {
-                    img.src = imagePaths[2]; // Si también falla, cargar la tercera imagen
-                };
+                img.src = imagePaths[1] || imagePaths[0]; // Cargar la primera variante si no se carga la base
             };
-
+        
+            // Añadir la imagen a la tarjeta
+            card.appendChild(img);
+        
+            // Mostrar la mini ventana al mantener el mouse sobre la imagen
+            let hoverTimer; // Variable para el temporizador
+        
+            img.addEventListener('mouseenter', () => {
+                hoverTimer = setTimeout(() => {
+                    popupImage.src = img.src; // Establecer la imagen en la mini ventana
+                    imagePopup.style.display = 'block'; // Mostrar la mini ventana
+                }, 1000); // 1 segundo
+            });
+        
+            // Limpiar el temporizador y ocultar la mini ventana al salir el mouse
+            img.addEventListener('mouseleave', () => {
+                clearTimeout(hoverTimer); // Cancelar el temporizador
+                imagePopup.style.display = 'none'; // Ocultar la mini ventana
+            });
+        
+            // Crear el menú desplegable solo si hay variantes
+            if (imagePaths.length > 1) {
+                const select = document.createElement('select');
+                imagePaths.forEach((path, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `Variante ${index + 1}`;
+                    select.appendChild(option);
+                });
+        
+                select.addEventListener('change', () => {
+                    const selectedIndex = select.value;
+                    img.src = imagePaths[selectedIndex];
+                });
+        
+                card.appendChild(select); // Añadir el menú desplegable después de la imagen
+            }
+        
+            // Crear el checkbox para seleccionar
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.className = 'image-checkbox';
-
-            // Cargar el estado del checkbox
+        
             const savedState = loadCheckboxState();
             checkbox.checked = !!savedState[i];
-
-            // Guardar el estado cuando cambie
+        
             checkbox.addEventListener('change', () => {
                 saveCheckboxState(i, checkbox.checked);
+                
+                // Verificar si todas las casillas de verificación están marcadas
+                const checkboxes = document.querySelectorAll('.image-checkbox');
+                const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+            
+                // Si todas están marcadas, mostrar el mensaje de felicitación
+                if (allChecked) {
+                    document.getElementById('congratulationsMessage').style.display = 'block';
+                }
+                document.getElementById('congratulationsMessage').addEventListener('click', () => {
+                    document.getElementById('congratulationsMessage').style.display = 'none';
+                });
+                
             });
+                
+            // Agregar un evento de clic al documento para ocultar el popup
+            document.addEventListener('click', (event) => {
+                const popup = document.getElementById('congratulationsMessage');
+                
+                // Verificar si el popup está visible y si el clic no fue dentro del popup
+                if (popup.style.display === 'block' && !popup.contains(event.target)) {
+                    popup.style.display = 'none'; // Ocultar el popup
+                }
+            });
+            
+            // Ocultar el popup al hacer clic en la imagen desplegada
+            const popupImage = document.getElementById('popupImage');
+            popupImage.addEventListener('click', () => {
+                document.getElementById('congratulationsMessage').style.display = 'none';
+            });
+            
+
+
+
+
+
 
             const label = document.createElement('label');
             label.appendChild(checkbox);
             label.appendChild(document.createTextNode(` Seleccionar`));
-
-            card.appendChild(img);
-            card.appendChild(label);
-            container.appendChild(card);
+        
+            card.appendChild(label); // Añadir el checkbox a la tarjeta
+            container.appendChild(card); // Añadir la tarjeta al contenedor
         }
+        
 
-        // Filtrar imágenes según el estado del checkbox principal
         filterCheckbox.addEventListener('change', () => {
+            const isChecked = filterCheckbox.checked;
+            localStorage.setItem('filterUnchecked', isChecked); // Guardar el estado en localStorage
+        
             const checkboxes = document.querySelectorAll('.image-checkbox');
             checkboxes.forEach((checkbox, index) => {
-                const card = checkbox.parentElement.parentElement; // Obtener el contenedor de la imagen
-                if (filterCheckbox.checked) {
-                    // Mostrar solo imágenes no marcadas
+                const card = checkbox.parentElement.parentElement;
+                if (isChecked) {
                     card.style.display = checkbox.checked ? 'none' : 'flex';
                 } else {
-                    // Mostrar todas las imágenes
                     card.style.display = 'flex';
                 }
             });
